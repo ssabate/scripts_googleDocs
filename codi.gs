@@ -3,7 +3,6 @@
 // comentaris dels alumnes posats en format de taula al full de càlcul on executem l'script
 /*
 Per exemple, aplicant l'script sobre les següents 2 columnes d'un full de càlcul:
-
 ALUMNE	                    COMENTARIS
 Spencer, John           	  "Assistència: 7 faltes d'assistència injustificades i 5 retrassos.
                             Pràctiques: 100% fetes. Nota mitja: 7.5
@@ -14,7 +13,6 @@ Bici , Sebastia             "Assistència: 5 faltes d'assistència injustificade
 Hairss, David	              "Assistència: 1 falta d'assistència injustificada.
                             Pràctiques: 75% fetes. Nota mitja: 7
                             Projecte: OK"
-
 Ens crearà un altre full de càlcul en 3 pàgines que contindran el nom i comentaris de cadascun d'ells per separat. A l'script
 l'indicarem la casella on està situat el text ALUMNE.
 */
@@ -32,8 +30,8 @@ function onOpen() {
 
 } // onOpen()
 
-//Demana el nom del fitxer i la cel·la inicial de dades per poder fer el llistat. Si tot va bé crida al mètode que genera el full de càlcul en comentaris
-function demanarDades(nomFitxer,celaInicial){
+//Demana el nom del fitxer i la cel·la inicial de dades per poder fer el llistat. També una cel·la en un text a part a mostrar. Si tot va bé crida al mètode que genera el full de càlcul en comentaris
+function demanarDades(nomFitxer,celaInicial, celaText){
 
   // Display a dialog box with a title, message, inputs fields, and "Accept" and "Cancel" buttons. The
   // user can also close the dialog by clicking the close button in its title bar.
@@ -47,13 +45,20 @@ function demanarDades(nomFitxer,celaInicial){
  
     // Process the user's response.
     if (resposta.getSelectedButton() == ui.Button.OK) {
-      crearComentaris(nomFitxer,celaInicial);
+      resposta = ui.prompt('Dades per generar el document', 'Cel·la en text per mostrar (MP, UF, ...)', ui.ButtonSet.OK_CANCEL);
+      celaText = resposta.getResponseText();
+ 
+      // Process the user's response.
+      if (resposta.getSelectedButton() == ui.Button.OK) {
+        crearComentaris(nomFitxer,celaInicial,celaText);
+      }
     }
   }
 }
 
 //Funció que crea el full de càlcul a partir dels comentaris que troba a la cel·la indicada
-function crearComentaris(nomFitxer,celaInicial){
+function crearComentaris(nomFitxer,celaInicial, celaText){
+  nomFitxer='aa',celaInicial='c6', celaText='c2';
   // Creem la fulla en lo nom indicat
   var fulla= SpreadsheetApp.create(nomFitxer);
   var pagina=fulla.getActiveSheet();
@@ -73,6 +78,12 @@ function crearComentaris(nomFitxer,celaInicial){
   var activeRow = activeSheet.getRange(activeRowIndex+1, activeColumnIndex, numberOfRows, numberOfColumns).getValues();
   // Textos de la capçalera de les columnes, que copiarem a cada pàgina
   var headerRow = activeSheet.getRange(activeRowIndex, activeColumnIndex, 1, numberOfColumns).getValues();
+  //Per últim seleccionem el text que indica de quin MP o UF és el comentari
+  range=fulla.getRange(celaText);
+  var filaText = range.getRow();
+  var columnaText = range.getColumn(); 
+  var textRow = activeSheet.getRange(filaText, columnaText, 1, 1).getValues();
+  var text=textRow[0][0];
   
   // Recorrem les dades de la matriu
   for(var i in activeRow){
@@ -92,7 +103,16 @@ function crearComentaris(nomFitxer,celaInicial){
       //Fem que la columna ajuste l'amplada al seu contingut
       pagina.autoResizeColumn(col);    
     }
-  
+    
+    // Poso 2 línies en blanc al començament de la pàgina
+    pagina.insertRowBefore(1);
+    pagina.insertRowBefore(1);
+    
+    //Per últim afegim el text que indica de quin MP o UF és el comentari i el situem a la casella B1
+    pagina.setActiveRange(pagina.getRange(1,2));
+    pagina.getActiveCell().setValue(text);
+    
+    
     //Insertem una nova pàgina
     pagina=fulla.insertSheet();
     
